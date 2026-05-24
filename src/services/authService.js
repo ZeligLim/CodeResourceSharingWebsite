@@ -41,6 +41,34 @@ export async function signUpUser({ username, password }) {
   });
 
   if (error) throw error;
+
+  return {
+    email: username,
+    needsEmailConfirmation: !data.session,
+    user: data.user
+  };
+}
+
+export async function requestPasswordResetEmail(email) {
+  if (!isSupabaseConfigured) {
+    throw new Error('Password reset needs Supabase mode.');
+  }
+
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo
+  });
+
+  if (error) throw error;
+}
+
+export async function updateUserPassword(password) {
+  if (!isSupabaseConfigured) {
+    throw new Error('Password reset needs Supabase mode.');
+  }
+
+  const { data, error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
   return data.user;
 }
 

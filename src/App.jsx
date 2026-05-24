@@ -3,11 +3,12 @@ import AdminLoginModal from './components/AdminLoginModal.jsx';
 import ContentCard from './components/ContentCard.jsx';
 import ItemEditor from './components/ItemEditor.jsx';
 import NotebookBar from './components/NotebookBar.jsx';
+import PasswordResetModal from './components/PasswordResetModal.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import SummaryBand from './components/SummaryBand.jsx';
 import { THEME_KEY } from './constants.js';
-import { isSupabaseConfigured } from './lib/supabaseClient.js';
-import { getCurrentUserSession, signInUser, signOutUser, signUpUser } from './services/authService.js';
+import { isSupabaseConfigured, supabase } from './lib/supabaseClient.js';
+import { getCurrentUserSession, requestPasswordResetEmail, signInUser, signOutUser, signUpUser, updateUserPassword } from './services/authService.js';
 import { deleteContentItem, fetchContentItems, importContentItems, saveContentItem } from './services/contentService.js';
 import { createNotebook, ensureDefaultNotebook, fetchSharedNotebook, fetchUserNotebooks, updateNotebookSharing } from './services/notebookService.js';
 import { buildFolderTree, folderMatchesSelection } from './utils/folders.js';
@@ -22,6 +23,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [editing, setEditing] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(
+    window.location.hash.includes('type=recovery') || window.location.search.includes('type=recovery')
+  );
   const [theme, setTheme] = useState(localStorage.getItem(THEME_KEY) || 'light');
   const [status, setStatus] = useState('Loading content...');
   const [busy, setBusy] = useState(false);
@@ -66,6 +70,20 @@ function App() {
     }
 
     bootApp();
+  }, []);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return undefined;
+
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setUser(session?.user || null);
+        setShowPasswordReset(true);
+        setStatus('Choose a new password to finish recovery.');
+      }
+    });
+
+    return () => data.subscription.unsubscribe();
   }, []);
 
   const folderTree = useMemo(() => buildFolderTree(items), [items]);
@@ -120,9 +138,13 @@ function App() {
   }
 
   async function signIn(credentials) {
+    if (!credentials.username || !credentials.password) {
+      return { ok: false, message: 'Enter your email and password.' };
+    }
+
     try {
       const signedInUser = await signInUser(credentials);
-      if (!signedInUser) return false;
+      if (!signedInUser) return { ok: false, message: 'Wrong sign in details.' };
 
       const defaultNotebook = await ensureDefaultNotebook(signedInUser);
       const loadedNotebooks = await fetchUserNotebooks(signedInUser);
@@ -133,24 +155,84 @@ function App() {
       setItems(await fetchContentItems(defaultNotebook));
       setShowLogin(false);
       setStatus(isSupabaseConfigured ? `Signed in as ${signedInUser.email}.` : 'Signed in with local demo account.');
-      return true;
+      return { ok: true };
     } catch (error) {
       setStatus(`Sign in failed: ${error.message}`);
-      return false;
+      return { ok: false, message: error.message };
     }
   }
 
   async function signUp(credentials) {
+    if (!isSupabaseConfigured) {
+      return { ok: false, message: 'Account creation needs Supabase mode. Use admin / code123 locally.' };
+    }
+
+    if (!credentials.username.includes('@')) {
+      return { ok: false, message: 'Use a valid email address.' };
+    }
+
+    if (credentials.password.length < 6) {
+      return { ok: false, message: 'Password must be at least 6 characters.' };
+    }
+
     try {
-      const newUser = await signUpUser(credentials);
-      if (!newUser) return false;
+      const result = await signUpUser(credentials);
+      if (!result) return { ok: false, message: 'Supabase did not return a signup result.' };
 
       setShowLogin(false);
-      setStatus('Account created. If Supabase email confirmation is on, check your email before signing in.');
-      return true;
+      setStatus(result.needsEmailConfirmation
+        ? `Account created for ${result.email}. Check your email, then sign in.`
+        : `Account created for ${result.email}. You can sign in now.`
+      );
+      return { ok: true };
     } catch (error) {
       setStatus(`Create account failed: ${error.message}`);
-      return false;
+      return { ok: false, message: error.message };
+    }
+  }
+
+  async function forgotPassword(credentials) {
+    if (!isSupabaseConfigured) {
+      return { ok: false, message: 'Password reset needs Supabase mode.' };
+    }
+
+    if (!credentials.username.includes('@')) {
+      return { ok: false, message: 'Enter the email for your account.' };
+    }
+
+    try {
+      await requestPasswordResetEmail(credentials.username);
+      setShowLogin(false);
+      setStatus(`Password reset link sent to ${credentials.username}.`);
+      return { ok: true };
+    } catch (error) {
+      setStatus(`Password reset failed: ${error.message}`);
+      return { ok: false, message: error.message };
+    }
+  }
+
+  async function handleUpdatePassword(password) {
+    setBusy(true);
+
+    try {
+      const updatedUser = await updateUserPassword(password);
+      const currentUser = updatedUser || await getCurrentUserSession();
+      const defaultNotebook = await ensureDefaultNotebook(currentUser);
+      const loadedNotebooks = await fetchUserNotebooks(currentUser);
+
+      setUser(currentUser);
+      setNotebooks(loadedNotebooks.length ? loadedNotebooks : [defaultNotebook]);
+      setSelectedNotebook(defaultNotebook);
+      setItems(await fetchContentItems(defaultNotebook));
+      setShowPasswordReset(false);
+      window.history.replaceState({}, '', window.location.pathname);
+      setStatus('Password updated. You are signed in.');
+      return { ok: true };
+    } catch (error) {
+      setStatus(`Password update failed: ${error.message}`);
+      return { ok: false, message: error.message };
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -259,7 +341,14 @@ function App() {
             </button>
             {user && !isSharedView ? (
               <>
-                {canEdit && <button className="primary-button" onClick={() => setEditing({})}>Add Info</button>}
+                {canEdit && (
+                  <button
+                    className="primary-button"
+                    onClick={() => setEditing({ folder: folder === 'all' ? 'general' : folder })}
+                  >
+                    Add Info
+                  </button>
+                )}
                 <button className="plain-button" onClick={signOut}>Sign Out</button>
               </>
             ) : (
@@ -309,8 +398,16 @@ function App() {
         <AdminLoginModal
           isSupabaseConfigured={isSupabaseConfigured}
           onClose={() => setShowLogin(false)}
+          onForgotPassword={forgotPassword}
           onSignIn={signIn}
           onSignUp={signUp}
+        />
+      )}
+      {showPasswordReset && (
+        <PasswordResetModal
+          busy={busy}
+          onClose={() => setShowPasswordReset(false)}
+          onUpdatePassword={handleUpdatePassword}
         />
       )}
       {editing && <ItemEditor item={editing} busy={busy} onClose={() => setEditing(null)} onSave={upsertItem} />}

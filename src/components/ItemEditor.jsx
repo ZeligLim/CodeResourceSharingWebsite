@@ -22,6 +22,7 @@ function ItemEditor({ item, busy, onClose, onSave }) {
     event.preventDefault();
     onSave({
       ...draft,
+      type: draft.url.trim() ? 'link' : 'text',
       folder: normalizeFolderPath(draft.folder),
       tags: draft.tags.split(',').map((tag) => tag.trim()).filter(Boolean)
     });
@@ -46,14 +47,6 @@ function ItemEditor({ item, busy, onClose, onSave }) {
           </div>
           <button type="button" className="icon-button" onClick={onClose} aria-label="Close">×</button>
         </header>
-
-        <label>
-          Type
-          <select value={draft.type} onChange={(event) => update('type', event.target.value)}>
-            <option value="link">Link</option>
-            <option value="text">Text</option>
-          </select>
-        </label>
 
         <label>
           Title

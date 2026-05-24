@@ -24,15 +24,21 @@ function NotebookBar({
       </div>
 
       {!isSharedView && (
-        <select
-          value={selectedNotebook?.id || ''}
-          onChange={(event) => onSelectNotebook(event.target.value)}
-          disabled={!notebooks.length}
-        >
-          {notebooks.map((notebook) => (
-            <option key={notebook.id} value={notebook.id}>{notebook.title}</option>
-          ))}
-        </select>
+        <div className="select-wrap">
+          <select
+            value={selectedNotebook?.id || ''}
+            onChange={(event) => onSelectNotebook(event.target.value)}
+            disabled={!notebooks.length}
+          >
+            {notebooks.map((notebook) => (
+              <option key={notebook.id} value={notebook.id}>{notebook.title}</option>
+            ))}
+          </select>
+          <span className="select-arrows" aria-hidden="true">
+            <i />
+            <i />
+          </span>
+        </div>
       )}
 
       {canEdit && (

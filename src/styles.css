@@ -183,13 +183,13 @@ label.file-button {
 }
 
 .search-wrap {
-  min-height: 50px;
+  height: 42px;
   display: grid;
   grid-template-columns: 34px 1fr;
   align-items: center;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 14px;
   padding: 0 14px;
   box-shadow: var(--shadow);
 }
@@ -233,8 +233,9 @@ label.file-button {
 .primary-button,
 .plain-button,
 .danger-button,
-.icon-button {
-  min-height: 42px;
+.icon-button,
+.notebook-bar select {
+  height: 42px;
   border: 1px solid transparent;
   border-radius: 14px;
   padding: 9px 14px;
@@ -348,14 +349,47 @@ label.file-button {
   text-transform: uppercase;
 }
 
-.notebook-bar select {
+.select-wrap {
+  position: relative;
+}
+
+.select-wrap select {
+  appearance: none;
+  -webkit-appearance: none;
   width: 100%;
-  min-height: 42px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--panel);
   color: var(--text);
-  padding: 0 12px;
+  padding: 0 38px 0 14px;
+}
+
+.select-arrows {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 14px;
+  display: grid;
+  gap: 3px;
+  place-items: center;
+  pointer-events: none;
+}
+
+.select-arrows i {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+.select-arrows i:first-child {
+  border-bottom: 5px solid var(--muted);
+}
+
+.select-arrows i:last-child {
+  border-top: 5px solid var(--muted);
 }
 
 .notebook-actions {
@@ -513,6 +547,8 @@ label.file-button {
 
 .login-modal {
   width: min(440px, 100%);
+  gap: 12px;
+  padding: 18px;
 }
 
 .modal-panel header,
@@ -530,6 +566,55 @@ label.file-button {
   color: var(--muted);
   font-weight: 800;
   font-size: 13px;
+}
+
+.password-row {
+  display: grid;
+  gap: 7px;
+}
+
+.password-control {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.password-control input {
+  border: 0;
+  border-radius: 0;
+}
+
+.password-control button {
+  height: 100%;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--panel-soft);
+  color: var(--text);
+  padding: 0 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.text-button {
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.login-modal footer {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .modal-panel textarea {

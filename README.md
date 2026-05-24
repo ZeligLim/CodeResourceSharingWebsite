@@ -35,6 +35,8 @@ Password: code123
 
 After Supabase is configured, the popup sign-in form uses Supabase Auth email/password. Users can create accounts from the same popup.
 
+Users can also request a password reset from the sign-in popup. Supabase sends them an email link, then the app opens a new-password modal when they return.
+
 ## What the App Can Do
 
 - Browse coding content by folder in the left file-system panel.
@@ -61,20 +63,38 @@ To enable Supabase mode:
 2. Open the Supabase SQL Editor.
 3. Run the SQL from `supabase/schema.sql`.
 4. In Supabase, go to **Authentication > Providers** and make sure **Email** is enabled.
-5. Create a `.env` file in this project using `.env.example` as the template:
+5. In **Authentication > URL Configuration**, add your local and deployed app URLs:
+
+```text
+http://127.0.0.1:5173
+http://localhost:5173
+https://your-deployed-site.vercel.app
+```
+
+Also add redirect URL patterns:
+
+```text
+http://127.0.0.1:5173/**
+http://localhost:5173/**
+https://your-deployed-site.vercel.app/**
+```
+
+These URLs are needed for sign up confirmation and forgot-password recovery links.
+
+6. Create a `.env` file in this project using `.env.example` as the template:
 
 ```bash
 cp .env.example .env
 ```
 
-6. Fill in your Supabase values:
+7. Fill in your Supabase values:
 
 ```text
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
-7. Restart the dev server:
+8. Restart the dev server:
 
 ```bash
 npm run dev
