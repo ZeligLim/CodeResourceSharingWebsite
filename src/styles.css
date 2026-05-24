@@ -333,7 +333,7 @@ label.file-button {
   box-shadow: var(--shadow);
 }
 
-.notebook-bar > div:first-child {
+.notebook-bar>div:first-child {
   display: grid;
   gap: 2px;
 }
@@ -601,10 +601,11 @@ label.file-button {
 
 .text-button {
   width: fit-content;
+  margin-left: auto;
+  padding-right: 1rem;
   border: 0;
   background: transparent;
   color: var(--text);
-  padding: 0;
   font-size: 13px;
   font-weight: 800;
   text-decoration: underline;
@@ -613,7 +614,7 @@ label.file-button {
 
 .login-modal footer {
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 8px;
 }
 
@@ -675,7 +676,7 @@ label.file-button {
     flex-wrap: wrap;
   }
 
-  .admin-slot > * {
+  .admin-slot>* {
     flex: 1 1 auto;
   }
 
@@ -687,7 +688,7 @@ label.file-button {
     justify-content: stretch;
   }
 
-  .notebook-actions > * {
+  .notebook-actions>* {
     flex: 1 1 auto;
   }
 }
